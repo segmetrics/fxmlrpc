@@ -47,9 +47,30 @@ final class XmlReaderParser implements ParserInterface
         $this->validateResponse = $validateResponse;
     }
 
+    /**
+     * Clean invalid XML from the return string
+     * @param $xmlString
+     * @return mixed
+     */
+    private function cleanInvalidCharacters($xmlString)
+    {
+        $xmlString = preg_replace('/[^\x{0009}\x{000a}\x{000d}\x{0020}-\x{D7FF}\x{E000}-\x{FFFD}]+/u', '', $xmlString);   // Strip out UTF-8
+        $xmlString = preg_replace(['/\&#[0-9]{1,4}(?![0-9]{0,3};)/'], '', $xmlString);
+
+        return str_replace([
+            '&#32;', '&#31;', '&#30;', '&#29;', '&#28;', '&#27;', '&#26;', '&#25;', '&#24;', '&#23;', '&#22;', '&#21;',
+            '&#20;', '&#19;', '&#18;', '&#17;', '&#16;', '&#15;', '&#14;', '&#13;', '&#12;', '&#11;',
+            '&#10;', '&#9;', '&#8;', '&#7;', '&#6;', '&#5;', '&#4;', '&#3;', '&#2;', '&#1;', '&#0;',
+            '&#127', '&#180;', '&#193;', '&#214;', '&#240;', '&#255;', '&#402;', '&#8218;', '&#8482;',
+            '’', '“',  '”', '&#',
+        ], '', $xmlString);
+    }
+    
     /** {@inheritdoc} */
     public function parse($xmlString)
     {
+        $xmlString = $this->cleanInvalidCharacters($xmlString);
+        
         if ($this->validateResponse) {
             XmlChecker::validXml($xmlString);
         }
